@@ -1,0 +1,32 @@
+- set_fact:
+    sw_disk_list: "{{ sw_item.disks }}"
+  when: sw_item.disks is defined
+
+
+- name: Attach storage disks for SW Raid
+  uri:
+    url: "{{ deploy_api_url }}/clusters/{{ cluster_id }}/nodes/{{ outeritem.node_id }}/storage/disks"
+    method: POST
+    headers:
+      Content-Type: "application/json"
+    body: '{"disks": {{ sw_disk_list }}}'
+    body_format: json
+    user: "{{ deploy_login }}"
+    password: "{{ deploy_pwd }}"
+    status_code: 201,202,200
+    validate_certs: False
+- set_fact:
+    d_list: []
+
+- name: Add pool for SW raid disk
+  uri:
+    url: "{{ deploy_api_url }}/clusters/{{ cluster_id }}/nodes/{{ outeritem.node_id }}/storage/pools"
+    method: POST
+    headers:
+      Content-Type: "application/json"
+    body: '{"pool_array": [{"name": "{{ sw_item.storage_pool }}"}]}'
+    body_format: json
+    user: "{{ deploy_login }}"
+    password: "{{ deploy_pwd }}"
+    status_code: 200,201,202
+    validate_certs: False

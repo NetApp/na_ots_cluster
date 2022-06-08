@@ -3,7 +3,7 @@
 # --------------------------------------------------------------------------------------------
 # 1. capacityTB is converted to bytes and then 300GB is subtracted to allow for overhead
 #    (system disk) and an additional 2% free space per TB is reserved
-# 2. if the node already has a storage pool assigned from a previously incomplete creation 
+# 2. if the node already has a storage pool assigned from a previously incomplete creation
 #    process, the task will detach (DELETE) the existing pool then add the specified pool.
 # --------------------------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@
 
 # ----------------------------------------------------------------------
 # Detach existing storage pool IF it exists
-# - This will only occur if the cluster did not successfully deploy and 
+# - This will only occur if the cluster did not successfully deploy and
 #   the task is being re-executed
 # ----------------------------------------------------------------------
 
@@ -70,7 +70,7 @@
 # Attach the storage pool
 # -----------------------
 
-- name: .....attach storage pool
+- name: .....attach storage pool for HW Raid
 
   uri:
     url: "{{ deploy_api_url }}/clusters/{{ cluster_id }}/nodes/{{ outeritem.node_id }}/storage/pools"
@@ -89,5 +89,16 @@
   when:
     - outeritem.node_name == item.node_name
     - check_storage_response.json.num_records == 0
-
+    - software_raid == false
   register: configure_node_storage_response
+
+
+- name: Call attach storage disks for SW raid task
+  include_tasks: 'configure_node_sw_storage.yaml'
+  loop: "{{ cluster_nodes }}"
+  loop_control:
+    label: "{{ sw_item.node_name }}({{ sw_item.storage_pool }})({{ sw_item.disk_list}})"
+    loop_var: "sw_item"
+  when:
+    - outeritem.node_name == sw_item.node_name
+    - software_raid == true
